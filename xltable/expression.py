@@ -11,6 +11,8 @@ class Expression(object):
     Expressions are used to build formulas referencing ranges in the
     worksheet by labels which are resolved to cell references when the
     worksheet is written out.
+
+    Expressions may be combined using binary operators.
     """
     def __add__(self, other):
         return BinOp(self, _make_expr(other), "+")
@@ -157,10 +159,15 @@ class Range(Expression):
 
 class Formula(Expression):
     """
-    Formula expression, eg "=SUMPRODUCT(a, b, c)"
+    Formula expression.
 
-    :param name: name of function, eg "SUMPRODUCT"
-    :param args: expressions to use as arguments to the function
+    E.g. to create a formula like "=SUMPRODUCT(a, b)" where a and b
+    are columns in a table you would do::
+
+        formula = Formula("SUMPRODUCT", Column("col_a"), Column("col_b"))
+
+    :param name: name of Excel function, eg "SUMPRODUCT"
+    :param args: expressions to use as arguments to the function.
     """
     def __init__(self, name, *args):
         self.__name = name

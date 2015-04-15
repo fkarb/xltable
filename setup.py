@@ -11,7 +11,7 @@ setup_params = dict(
     test_suite="nose.collector",
     version="0.1",
     install_requires=["pandas>=0.12.0"],
-    extra_require={
+    extras_require={
         "xlsxwriter": ["xlsxwriter>=0.7.2"],
         "pywin32": ["pywin32>=219"],
         "xlwt": ["xlwt>=0.7.5"]

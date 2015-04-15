@@ -20,6 +20,8 @@ class Worksheet(object):
     Once all tables have been placed the worksheet can be written out or
     the rows can be iterated over, and any expressions present in the
     tables will be resolved to absolute cell references.
+
+    :param str name: Worksheet name.
     """
 
     def __init__(self, name="Sheet1"):
@@ -31,12 +33,18 @@ class Worksheet(object):
 
     @property
     def name(self):
+        """worksheet name"""
         return self.__name
 
     def add_table(self, table, row=None, col=0, row_spaces=1):
         """
         Adds a table to the worksheet at (row, col).
         Return the (row, col) where the table has been put.
+
+        :param xltable.Table table: table to add to the worksheet.
+        :param int row: row to start the table at (defaults to the next free row).
+        :param int col: column to start the table at.
+        :param int row_spaces: number of rows to leave between this table and the next.
         """
         name = table.name
         assert name is not None, "Tables must have a name"
@@ -48,7 +56,12 @@ class Worksheet(object):
         return row, col
 
     def add_chart(self, chart, row, col):
-        """adds a chart to the worksheet at (row, col)"""
+        """
+        Adds a chart to the worksheet at (row, col).
+
+        :param xltable.Chart chart: chart to add to the workbook.
+        :param int row: row to add the wo
+        """
         self.__charts.append((chart, (row, col)))
 
     def add_row_group(self, tables, collapsed=True):
@@ -61,6 +74,7 @@ class Worksheet(object):
 
     @property
     def next_row(self):
+        """Row the next table will start at unless another row is specified."""
         return self.__next_row
 
     @next_row.setter
@@ -68,19 +82,28 @@ class Worksheet(object):
         self.__next_row = value
 
     def get_table_pos(self, tablename):
-        """return the upper left (row, col) coordinate for a named table"""
+        """
+        :param str tablename: name of table to get position of.
+        :return: upper left (row, col) coordinate of the named table.
+        """
         _table, (row, col) = self.__tables[tablename]
         return (row, col)
 
     def get_table(self, tablename):
         """
-        return a Table instance from a name
+        :param str tablename: name of table to find.
+        :return: a :py:class:`xlwriter.Table` instance from the table name.
         """
         table, (_row, _col) = self.__tables[tablename]
         return table
 
     def iterrows(self, workbook=None):
-        """yield rows a lists of data"""
+        """
+        Yield rows as lists of data.
+
+        The data is exactky as it is in the source pandas DataFrames and
+        any formulas are not resolved.
+        """
         resolved_tables = []
         max_height = 0
         max_width = 0
@@ -115,7 +138,10 @@ class Worksheet(object):
             yield row
  
     def to_csv(self, writer):
-        """writes worksheet to a csv.writer object"""
+        """
+        Writes worksheet to a csv.writer object.
+        :param writer: csv writer instance.
+        """
         for row in self.iterrows():
             writer.writerow(row)
 
@@ -209,13 +235,14 @@ class Worksheet(object):
                  resize_columns=True):
         """
         Writes worksheet to an Excel Worksheet COM object.
+        Requires :py:module:`pywin32` to be installed.
 
-        :param workbook: rb.excel.writer.Workbook this sheet belongs to.
+        :param workbook: xlwriter.Workbook this sheet belongs to.
         :param worksheet: Excel COM Worksheet instance to write to.
         :param xl_app: Excel COM Excel Application to write to.
-        :param clear (bool): clear worksheet before writing.
-        :param rename (bool): if a worksheet is provided, rename self to match the worksheet.
-        :param resize_columns (bool): resize sheet columns after writing.
+        :param bool clear: clear worksheet before writing.
+        :param bool rename: if a worksheet is provided, rename self to match the worksheet.
+        :param bool resize_columns: resize sheet columns after writing.
         """
         from win32com.client import Dispatch, constants, gencache
 
@@ -339,7 +366,11 @@ class Worksheet(object):
     def to_xlsx(self, filename=None, workbook=None):
         """
         Write worksheet to a .xlsx file using xlsxwriter.
-        Return a xlsxwriter.workbook.Workbook.
+
+        :param str filename: filename to write to. If None no file is written.
+        :param xlwriter.Workbook: workbook this sheet belongs to. If None a new workbook
+        will be created with this worksheet as the only sheet.
+        :return: :py:class:`xlsxwriter.workbook.Workbook` instance.
         """
         from .workbook import Workbook
         if not workbook:

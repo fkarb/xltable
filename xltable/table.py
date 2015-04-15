@@ -18,8 +18,27 @@ class Value(object):
 class Table(object):
     """
     Represents of table of data to be written to Excel, and
-    may include Expressions that will be converted into Excel
-    formulae when the table's position is fixed.
+    may include :py:class:`xltable.Expression`s that will be converted into Excel
+    formulas when the table's position is fixed.
+
+    :param str name: name of table so it can be referenced by other tables and charts.
+    :param pandas.DataFrame dataframe: dataframe containing the data for the table.
+    :param bool include_columns: Include the column names when outputting.
+    :param bool include_index: Include the index when outputting.
+    :param xlwriter.TableStyle style: Table style, or one of the named styles 'default' or 'plain'.
+    :param xlwriter.CellStyle column_styles: Dictionary of column names to styles or named styles.
+    :param float column_widths: Dictionary of column names to widths.
+    :param xlwriter.CellStyle: Style or named style to use for the cells in the header row.
+
+    Named table styles:
+        - default: blue stripes
+        - plain: no style
+
+    Named cell styles:
+        - pct: pecentage with two decimal places.
+        - iso-date: date in YYYY-MM-DD format.
+        - 2dp: two decimal places.
+        - 2dpc: thousand separated number to two decimal places.
     """
     _styles = {
         "default": TableStyle(),
@@ -138,8 +157,11 @@ class Table(object):
 
     def get_data(self, workbook, row, col):
         """
-        return a 2d numpy array for this table with any formulas resolved to the final
+        :return: 2d numpy array for this table with any formulas resolved to the final
         excel formula.
+        :param xlwriter.Workbook workbook: Workbook the table has been added to.
+        :param int row: Row where the table will start in the sheet (used for resolving formulas).
+        :param int col: Column where the table will start in the sheet (used for resolving formulas).
         """
         if workbook:
             prev_table = workbook.active_table
@@ -213,21 +235,29 @@ class Table(object):
 
 class ArrayFormula(Table):
     """
-    Represents an array formula to be written to Excel
+    Represents an array formula to be written to Excel.
+
+    Subclass of :py:class:`xltable.Table`.
+
+    :param str name: Name of table so it can be referenced by other tables and charts.
+    :param xlwriter.Formula formula: Array formula.
+    :param int width: Number of columns.
+    :param int height: Number of row.
+    :param pandas.DataFrame value: Precalculated formula result to save in the workbook.
+    :param xlwriter.TableStyle style: Table style, or one of the named styles 'default' or 'plain'.
+    :param xlwriter.CellStyle column_styles: Dictionary of column names to styles or named styles.
+    :param float column_widths: Dictionary of column names to widths.
     """
-    _styles = {
-        "default": TableStyle(),
-        "plain": TableStyle(stripe_colors=None)
-    }
 
-    _named_styles = {
-        "pct": CellStyle(is_percentage=True, decimal_places=2),
-        "iso-date": CellStyle(date_format="%Y-%m-%d"),
-        "2dp": CellStyle(decimal_places=2),
-        "2dpc": CellStyle(decimal_places=2, thousands_sep=True),
-    }
-
-    def __init__(self, name, formula, width, height, style="default", value=None, **kwargs):
+    def __init__(self,
+                 name,
+                 formula,
+                 width,
+                 height,
+                 value=None,
+                 style="default",
+                 column_styles={},
+                 column_widths={}):
         self.__formula = formula
         df = pa.DataFrame({c: [None] * height for c in range(width)})
         if value:
@@ -235,10 +265,11 @@ class ArrayFormula(Table):
         self.value = value
         super(ArrayFormula, self).__init__(name,
                                             dataframe=df,
-                                            include_columns=kwargs.get("include_columns", False),
-                                            include_index=kwargs.get("include_index", False),
+                                            include_columns=False,
+                                            include_index=False,
                                             style=style,
-                                            column_styles=kwargs.get("column_styles", {}))
+                                            column_styles=column_styles,
+                                            column_widths=column_widths)
 
     @property
     def formula(self):
