@@ -22,13 +22,13 @@ class CellStyle(object):
 
     :param bool is_percentage: True if the cell value is a percentage.
     :param int decimal_places: Number of decimal places to display the cell value to.
-    :param str date_format: Format to use for date values (use Python date format, eg '%Y-%m-%d').
+    :param str date_format: Format to use for date values (use Python date format, e.g. '%Y-%m-%d').
     :param bool thousands_sep: True to display numbers with thousand separator.
     :param bool bold: True to make cells bold.
     :param int size: Text size, or use one of the string size aliases x-small, small, normal, large, x-large
-    or xx-large.
-    :param int text_color: Text color as an RGB value, eg 0xFF0000 for red.
-    :param int bg_color: Background color as an RGB value, eg 0xFF0000 for red.
+     or xx-large.
+    :param int text_color: Text color as an RGB value, e.g. 0xFF0000 for red.
+    :param int bg_color: Background color as an RGB value, e.g. 0xFF0000 for red.
     """
     _sizes = {
         "x-small": 6,

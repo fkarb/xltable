@@ -17,7 +17,7 @@ class Chart(object):
     :param int width: Chart width.
     :param int height: Chart height.
 
-    Chart Types:
+    Chart types and sub-types:
         - area:
             - stacked
             - percent_stacked
@@ -33,8 +33,8 @@ class Chart(object):
             - straight
             - smooth_with_markers
             - smooth
-        -stock
-        -radar:
+        - stock
+        - radar:
             - with_markers
             - filled
     """
