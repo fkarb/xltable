@@ -240,7 +240,7 @@ class Worksheet(object):
         :param workbook: xlwriter.Workbook this sheet belongs to.
         :param worksheet: Excel COM Worksheet instance to write to.
         :param xl_app: Excel COM Excel Application to write to.
-        :param bool clear: clear worksheet before writing.
+        :param bool clear: if a worksheet is provided, clear worksheet before writing.
         :param bool rename: if a worksheet is provided, rename self to match the worksheet.
         :param bool resize_columns: resize sheet columns after writing.
         """
@@ -256,22 +256,17 @@ class Worksheet(object):
 
         xl = xl_app = gencache.EnsureDispatch(xl_app)
 
-        if worksheet is None:
-            # If there's no workbook and no worksheet then create a new workbook
-            # just this sheet and use it to write to excel.
-            if workbook is None:
-                from .workbook import Workbook
-                workbook = Workbook(worksheets=[self])
-                return workbook.to_excel(xl_app=xl_app)
+        # Create a workbook if there isn't one already
+        if not workbook:
+            from .workbook import Workbook
+            workbook = Workbook(worksheets=[self])
 
-            # Otherwise create a new worksheet.
-            worksheet = workbook.add_excel_worksheet()
-            worksheet.Name = self.name
+        if worksheet is None:
+            # If there's no worksheet then call Workbook.to_excel which will create one
+            return workbook.to_excel(xl_app=xl_app, resize_columns=resize_columns)
 
         if rename:
             self.__name = worksheet.Name
-
-        table_ref = self if workbook is None else workbook
 
         # set manual calculation and turn off screen updating while we update the cells
         calculation = xl.Calculation
@@ -290,7 +285,7 @@ class Worksheet(object):
 
             origin = worksheet.Range("A1")
             xl_cell = origin
-            for row in self.iterrows(table_ref):
+            for row in self.iterrows(workbook):
                 row = _to_pywintypes(row)
 
                 # set the value and formulae to the excel range (it's much quicker to
