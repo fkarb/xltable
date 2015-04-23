@@ -17,7 +17,7 @@ tables of data rather than worry about writing individual cells.
 The main feature that makes :py:mod:`xltable` more useful than just writing the
 Excel files directly is that it can handle tables with formulas that relate to
 cells in the workbook *without* having to know in advance where those tables
-will be places on a worksheet. Only when all the tables have been added to the
+will be placed on a worksheet. Only when all the tables have been added to the
 workbook and the workbook is being written are formulas resolved to their
 final cell addresses.
 
@@ -25,7 +25,7 @@ Tables of data are constructed using :py:class:`pandas.DataFrame` objects. These
 can contain formulas relating to columns or cells in the same table or other
 tables in the same workbook.
 
-As well as writing tables to Excel :py:mod:`xltable` can also write charts using
+As well as writing tables to Excel, :py:mod:`xltable` can also write charts using
 tables as source data.
 
 Example
