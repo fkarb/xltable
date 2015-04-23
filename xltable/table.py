@@ -21,14 +21,14 @@ class Table(object):
     may include :py:class:`xltable.Expression`s that will be converted into Excel
     formulas when the table's position is fixed.
 
-    :param str name: name of table so it can be referenced by other tables and charts.
-    :param pandas.DataFrame dataframe: dataframe containing the data for the table.
+    :param str name: Name of the table so it can be referenced by other tables and charts.
+    :param pandas.DataFrame dataframe: Dataframe containing the data for the table.
     :param bool include_columns: Include the column names when outputting.
     :param bool include_index: Include the index when outputting.
-    :param xlwriter.TableStyle style: Table style, or one of the named styles 'default' or 'plain'.
-    :param xlwriter.CellStyle column_styles: Dictionary of column names to styles or named styles.
+    :param xltable.TableStyle style: Table style, or one of the named styles 'default' or 'plain'.
+    :param xltable.CellStyle column_styles: Dictionary of column names to styles or named styles.
     :param float column_widths: Dictionary of column names to widths.
-    :param xlwriter.CellStyle: Style or named style to use for the cells in the header row.
+    :param xltable.CellStyle style: Style or named style to use for the cells in the header row.
 
     Named table styles:
         - default: blue stripes
@@ -159,7 +159,7 @@ class Table(object):
         """
         :return: 2d numpy array for this table with any formulas resolved to the final
         excel formula.
-        :param xlwriter.Workbook workbook: Workbook the table has been added to.
+        :param xltable.Workbook workbook: Workbook the table has been added to.
         :param int row: Row where the table will start in the sheet (used for resolving formulas).
         :param int col: Column where the table will start in the sheet (used for resolving formulas).
         """
@@ -240,12 +240,12 @@ class ArrayFormula(Table):
     Subclass of :py:class:`xltable.Table`.
 
     :param str name: Name of table so it can be referenced by other tables and charts.
-    :param xlwriter.Formula formula: Array formula.
+    :param xltable.Formula formula: Array formula.
     :param int width: Number of columns.
     :param int height: Number of row.
     :param pandas.DataFrame value: Precalculated formula result to save in the workbook.
-    :param xlwriter.TableStyle style: Table style, or one of the named styles 'default' or 'plain'.
-    :param xlwriter.CellStyle column_styles: Dictionary of column names to styles or named styles.
+    :param xltable.TableStyle style: Table style, or one of the named styles 'default' or 'plain'.
+    :param xltable.CellStyle column_styles: Dictionary of column names to styles or named styles.
     :param float column_widths: Dictionary of column names to widths.
     """
 

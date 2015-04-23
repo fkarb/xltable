@@ -43,7 +43,7 @@ Write a dataframe with a formula to Excel::
             "col_3": Cell("col_1") + Cell("col_2"),
     }, columns=["col_1", "col_2", "col_3"])
 
-    # create the named xlwriter Table instance
+    # create the named xltable Table instance
     table = Table("table", dataframe)
 
     # create the Workbook and Worksheet objects and add table to the sheet

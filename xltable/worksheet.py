@@ -33,7 +33,7 @@ class Worksheet(object):
 
     @property
     def name(self):
-        """worksheet name"""
+        """Worksheet name"""
         return self.__name
 
     def add_table(self, table, row=None, col=0, row_spaces=1):
@@ -41,10 +41,10 @@ class Worksheet(object):
         Adds a table to the worksheet at (row, col).
         Return the (row, col) where the table has been put.
 
-        :param xltable.Table table: table to add to the worksheet.
-        :param int row: row to start the table at (defaults to the next free row).
-        :param int col: column to start the table at.
-        :param int row_spaces: number of rows to leave between this table and the next.
+        :param xltable.Table table: Table to add to the worksheet.
+        :param int row: Row to start the table at (defaults to the next free row).
+        :param int col: Column to start the table at.
+        :param int row_spaces: Number of rows to leave between this table and the next.
         """
         name = table.name
         assert name is not None, "Tables must have a name"
@@ -59,8 +59,8 @@ class Worksheet(object):
         """
         Adds a chart to the worksheet at (row, col).
 
-        :param xltable.Chart chart: chart to add to the workbook.
-        :param int row: row to add the wo
+        :param xltable.Chart Chart: chart to add to the workbook.
+        :param int row: Row to add the chart at.
         """
         self.__charts.append((chart, (row, col)))
 
@@ -83,16 +83,16 @@ class Worksheet(object):
 
     def get_table_pos(self, tablename):
         """
-        :param str tablename: name of table to get position of.
-        :return: upper left (row, col) coordinate of the named table.
+        :param str tablename: Name of table to get position of.
+        :return: Upper left (row, col) coordinate of the named table.
         """
         _table, (row, col) = self.__tables[tablename]
         return (row, col)
 
     def get_table(self, tablename):
         """
-        :param str tablename: name of table to find.
-        :return: a :py:class:`xlwriter.Table` instance from the table name.
+        :param str tablename: Name of table to find.
+        :return: A :py:class:`xltable.Table` instance from the table name.
         """
         table, (_row, _col) = self.__tables[tablename]
         return table
@@ -237,12 +237,12 @@ class Worksheet(object):
         Writes worksheet to an Excel Worksheet COM object.
         Requires :py:module:`pywin32` to be installed.
 
-        :param workbook: xlwriter.Workbook this sheet belongs to.
+        :param workbook: xltable.Workbook this sheet belongs to.
         :param worksheet: Excel COM Worksheet instance to write to.
         :param xl_app: Excel COM Excel Application to write to.
-        :param bool clear: if a worksheet is provided, clear worksheet before writing.
-        :param bool rename: if a worksheet is provided, rename self to match the worksheet.
-        :param bool resize_columns: resize sheet columns after writing.
+        :param bool clear: If a worksheet is provided, clear worksheet before writing.
+        :param bool rename: If a worksheet is provided, rename self to match the worksheet.
+        :param bool resize_columns: Resize sheet columns after writing.
         """
         from win32com.client import Dispatch, constants, gencache
 
@@ -362,8 +362,8 @@ class Worksheet(object):
         """
         Write worksheet to a .xlsx file using xlsxwriter.
 
-        :param str filename: filename to write to. If None no file is written.
-        :param xlwriter.Workbook: workbook this sheet belongs to. If None a new workbook
+        :param str filename: Filename to write to. If None no file is written.
+        :param xltable.Workbook: Workbook this sheet belongs to. If None a new workbook
         will be created with this worksheet as the only sheet.
         :return: :py:class:`xlsxwriter.workbook.Workbook` instance.
         """

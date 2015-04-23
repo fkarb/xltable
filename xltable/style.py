@@ -9,7 +9,7 @@ class TableStyle(object):
     """
     Style to be applied to a table.
 
-    :param tuple stripe_colors: Background cell colors to use.
+    :param tuple stripe_colors: Background cell colors to use as RGB values, e.g. 0xFF0000 for red.
     """
     def __init__(self, stripe_colors=(0xEAF1FA, 0xFFFFFF), border=None):
         self.stripe_colors = stripe_colors

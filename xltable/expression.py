@@ -63,10 +63,10 @@ class Cell(Expression):
     """
     Reference to a cell in a table.
 
-    :param col: column label this refers to
-    :param row: row label this refers to, or None to use the current row
-    :param row_offset: offset from the row, used when resolving
-    :param table: name of table the column is in, if not in the same table this expression is in
+    :param col: Column label this refers to.
+    :param row: Row label this refers to, or None to use the current row.
+    :param row_offset: Offset from the row, used when resolving.
+    :param table: Name of table the column is in, if not in the same table this expression is in.
     """
     def __init__(self, col, row=None, row_offset=0, table=None):
         self.__col = col
@@ -91,9 +91,9 @@ class Column(Expression):
     """
     Reference to a column in a table.
 
-    :param col: column label this refers to
-    :param include_header: True if this expression should include the column header
-    :param table: name of table the column is in, if not in the same table this expression is in
+    :param col: Column label this refers to.
+    :param include_header: True if this expression should include the column header.
+    :param table: Name of table the column is in, if not in the same table this expression is in.
     """
     def __init__(self, col, include_header=False, table=None):
         self.__col = col
@@ -115,12 +115,12 @@ class Range(Expression):
     """
     Reference to a range in a table.
 
-    :param left_col: left most column label this refers to
-    :param right_col: right most column label this refers to
-    :param top_row: top most row label, or None to select from the top of the table
-    :param bottom_row: bottom most row label, or None to select to the bottom of the table
-    :param include_header: include table header in the range
-    :param table: name of table the column is in, if not in the same table this expression is in
+    :param left_col: Left most column label this refers to.
+    :param right_col: Right most column label this refers to.
+    :param top_row: Top most row label, or None to select from the top of the table.
+    :param bottom_row: Bottom most row label, or None to select to the bottom of the table.
+    :param include_header: Include table header in the range.
+    :param table: Name of table the column is in, if not in the same table this expression is in.
     """
     def __init__(self,
                  left_col,
@@ -166,8 +166,8 @@ class Formula(Expression):
 
         formula = Formula("SUMPRODUCT", Column("col_a"), Column("col_b"))
 
-    :param name: name of Excel function, eg "SUMPRODUCT"
-    :param args: expressions to use as arguments to the function.
+    :param name: Name of Excel function, eg "SUMPRODUCT".
+    :param args: Expressions to use as arguments to the function.
     """
     def __init__(self, name, *args):
         self.__name = name

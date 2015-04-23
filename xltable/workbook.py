@@ -15,7 +15,7 @@ class Workbook(object):
     tables of the worksheets will be resolved to absolute worksheet/cell references.
 
     :param str filename: Filename the workbook will be written to.
-    :param list worksheets: list of :py:class:`xlwriter.Worksheet` instances.
+    :param list worksheets: List of :py:class:`xltable.Worksheet` instances.
     """
     def __init__(self, filename=None, worksheets=[]):
         self.filename = filename

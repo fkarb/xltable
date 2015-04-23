@@ -10,9 +10,9 @@ class Chart(object):
     Chart objects reference data from Table instances and are written
     to Excel worksheets as Excel charts.
 
-    :param str type: chart type (see below).
-    :param str subtype: chart sub type (see below).
-    :param str title: chart title
+    :param str type: Chart type (see below).
+    :param str subtype: Chart sub type (see below).
+    :param str title: Chart title
     :param str legend_position: right (default), left, top, bottom or 'none' for no legend.
     :param int width: Chart width.
     :param int height: Chart height.
@@ -71,9 +71,9 @@ class Chart(object):
         """
         Adds a series to the chart.
         
-        :param values: an Expression object that evaluates to the data series.
-        :param name: name to show in the legend for the series
-        :param line: line style, eg {color: 'blue', width: 3.25} or {none: True}
+        :param values: A :py:class:`xltable.Expression` object that evaluates to the data series.
+        :param name: Name to show in the legend for the series
+        :param line: Line style, eg {'color': 'blue', 'width': 3.25} or {'none': True}
         :param marker: dict specifying how the markers should look, eg {type: square}.
         :param trendline: dict specifying how the trendline should be drawn, eg {type: linear}.
         """
@@ -83,7 +83,7 @@ class Chart(object):
 
     def iter_series(self, workbook, row, col):
         """
-        yield series dictionaries with values resolved to the final excel formulae.
+        Yield series dictionaries with values resolved to the final excel formulas.
         """
         for series in self.__series:
             series = dict(series)
