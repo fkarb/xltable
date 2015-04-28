@@ -244,6 +244,8 @@ class ArrayFormula(Table):
     :param int width: Number of columns.
     :param int height: Number of row.
     :param pandas.DataFrame value: Precalculated formula result to save in the workbook.
+    :param bool include_columns: Include the column names when outputting `value`.
+    :param bool include_index: Include the index when outputting `value`.
     :param xltable.TableStyle style: Table style, or one of the named styles 'default' or 'plain'.
     :param xltable.CellStyle column_styles: Dictionary of column names to styles or named styles.
     :param float column_widths: Dictionary of column names to widths.
@@ -255,6 +257,8 @@ class ArrayFormula(Table):
                  width,
                  height,
                  value=None,
+                 include_columns=False,
+                 include_index=False,
                  style="default",
                  column_styles={},
                  column_widths={}):
@@ -264,12 +268,12 @@ class ArrayFormula(Table):
             df = value
         self.value = value
         super(ArrayFormula, self).__init__(name,
-                                            dataframe=df,
-                                            include_columns=False,
-                                            include_index=False,
-                                            style=style,
-                                            column_styles=column_styles,
-                                            column_widths=column_widths)
+                                           dataframe=df,
+                                           include_columns=include_columns,
+                                           include_index=include_index,
+                                           style=style,
+                                           column_styles=column_styles,
+                                           column_widths=column_widths)
 
     @property
     def formula(self):
@@ -278,5 +282,4 @@ class ArrayFormula(Table):
     def get_data(self, workbook, row, col):
         if not self.value:
             self.dataframe[:] = "{%s}" % self.formula.get_formula(workbook, row, col)
-
         return super(ArrayFormula, self).get_data(workbook, row, col)
