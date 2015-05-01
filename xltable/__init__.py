@@ -106,6 +106,8 @@ Classes
 
 .. autoclass:: CellStyle
 
+.. autoclass:: Value
+
 """
 from .expression import Column, Cell, Range, Formula, ConstExpr, Expression
 from .style import CellStyle, TableStyle

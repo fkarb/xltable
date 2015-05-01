@@ -163,7 +163,7 @@ class Worksheet(object):
         _styles = {}
         def _get_style(bold=False, bg_col=None, border=None):
             if (bold, bg_col, border) not in _styles:
-                _styles[(bold, bg_col, border)] = CellStyle(bold,
+                _styles[(bold, bg_col, border)] = CellStyle(bold=bold,
                                                             bg_color=bg_col,
                                                             border=border)
             return _styles[(bold, bg_col, border)]
@@ -175,8 +175,8 @@ class Worksheet(object):
                     ws_styles[(r, c)] = table.header_style or _get_style(bold=True)
 
             for c in range(col, col + table.row_labels_width):
-                for r in range(row, row + table.height):
-                    ws_styles[(r, c)] = table.header_style or _get_style(bold=True)
+                for r in range(row + table.header_height, row + table.height):
+                    ws_styles[(r, c)] = table.index_style or _get_style(bold=True)
 
             bg_cols = None
             num_bg_cols = 0
@@ -191,8 +191,11 @@ class Worksheet(object):
                                                      table.height)):
                     for c in range(col, col + table.width):
                         bg_col = bg_cols[i % num_bg_cols] if bg_cols else None
-                        ws_styles[(row + row_offset, c)] = _get_style(
-                            bold=False, bg_col=bg_col, border=border)
+                        style = _get_style(bold=None, bg_col=bg_col, border=border)
+                        if (row + row_offset, c) in ws_styles:
+                            ws_styles[(row + row_offset, c)] += style
+                        else:
+                            ws_styles[(row + row_offset, c)] = style
 
             for col_name, col_style in table.column_styles.items():
                 try:

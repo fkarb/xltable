@@ -9,7 +9,12 @@ import pandas as pa
 
 
 class Value(object):
-    """value wrapper that can be used in a table to add a style"""
+    """
+    Value wrapper that can be used in a table to add a style.
+
+    :param value: Value that will be written to the cell.
+    :param xltable.CellStyle: Style to be applied to the cell.
+    """
     def __init__(self, value, style=None):
         self.value = value
         self.style = style
@@ -28,7 +33,8 @@ class Table(object):
     :param xltable.TableStyle style: Table style, or one of the named styles 'default' or 'plain'.
     :param xltable.CellStyle column_styles: Dictionary of column names to styles or named styles.
     :param float column_widths: Dictionary of column names to widths.
-    :param xltable.CellStyle style: Style or named style to use for the cells in the header row.
+    :param xltable.CellStyle header_style: Style or named style to use for the cells in the header row.
+    :param xltable.CellStyle index_style: Style or named style to use for the cells in the index column.
 
     Named table styles:
         - default: blue stripes
@@ -60,7 +66,8 @@ class Table(object):
                  style="default",
                  column_styles={},
                  column_widths={},
-                 header_style=None):
+                 header_style=None,
+                 index_style=None):
         self.__name = name
         self.__df = dataframe
         self.__position = None
@@ -81,6 +88,7 @@ class Table(object):
                 self.__col_styles[col] = self._named_styles[style]
 
         self.header_style = header_style
+        self.index_style = index_style
 
     @property
     def name(self):

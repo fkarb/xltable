@@ -59,13 +59,16 @@ class Workbook(object):
             finally:
                 self.active_worksheet = prev_ws
 
-    def to_xlsx(self):
+    def to_xlsx(self, **kwargs):
         """
         Write workbook to a .xlsx file using xlsxwriter.
         Return a xlsxwriter.workbook.Workbook.
+
+        :param kwargs: Extra arguments passed to the xlsxwriter.Workbook
+        constructor.
         """
         from xlsxwriter.workbook import Workbook as _Workbook
-        self.workbook_obj = _Workbook()
+        self.workbook_obj = _Workbook(**kwargs)
         self.workbook_obj.set_calc_mode(self.calc_mode)
 
         for worksheet in self.itersheets():
