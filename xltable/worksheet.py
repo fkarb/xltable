@@ -10,6 +10,7 @@ from .table import ArrayFormula
 import re
 import datetime as dt
 import pandas as pa
+import numpy as np
 from copy import copy
 
 
@@ -532,12 +533,27 @@ def _to_pywintypes(row):
     def _pywintype(x):
         if isinstance(x, dt.date):
             return dt.datetime(x.year, x.month, x.day, tzinfo=dt.timezone.utc)
-        if isinstance(x, (dt.datetime, pa.Timestamp)):
+
+        elif isinstance(x, (dt.datetime, pa.Timestamp)):
             if x.tzinfo is None:
                 return x.replace(tzinfo=dt.timezone.utc)
-        if isinstance(x, str) and re.match("^\d{4}-\d{2}-\d{2}$", x):
-            return "'" + x
+
+        elif isinstance(x, str):
+            if re.match("^\d{4}-\d{2}-\d{2}$", x):
+                return "'" + x
+            return x
+
+        elif isinstance(x, np.integer):
+            return int(x)
+
+        elif isinstance(x, np.floating):
+            return float(x)
+
+        elif x is not None and not isinstance(x, (str, int, float, bool)):
+            return str(x)
+
         return x
+
     return [_pywintype(x) for x in row]
 
 
