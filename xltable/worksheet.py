@@ -459,7 +459,7 @@ class Worksheet(object):
                         cell = data[y][x]
                         if isinstance(cell, str):
                             cell_str = cell.encode("ascii", "xmlcharrefreplace").decode("ascii")
-                            ws.write_formula_string(ir, ic, cell_str, style)
+                            ws.write_formula(ir, ic, cell_str, style)
                         else:
                             ws.write(ir, ic, cell, style)
 
