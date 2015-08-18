@@ -66,6 +66,7 @@ class Table(object):
                  style="default",
                  column_styles={},
                  column_widths={},
+                 row_styles={},
                  header_style=None,
                  index_style=None):
         self.__name = name
@@ -87,6 +88,13 @@ class Table(object):
             else:
                 self.__col_styles[col] = self._named_styles[style]
 
+        self.__row_styles = {}
+        for row, style in row_styles.items():
+            if isinstance(style, CellStyle):
+                self.__row_styles[row] = style
+            else:
+                self.__row_styles[row] = self._named_styles[style]
+
         self.header_style = header_style
         self.index_style = index_style
 
@@ -107,6 +115,10 @@ class Table(object):
         return self.__col_styles
 
     @property
+    def row_styles(self):
+        return self.__row_styles
+
+    @property
     def column_widths(self):
         return self.__column_widths
 
@@ -125,42 +137,47 @@ class Table(object):
 
     @property
     def width(self):
-        width = len(self.dataframe.columns)
-        if self.__include_index:
-            width += 1
-        return width 
+        return len(self.dataframe.columns) + self.row_labels_width
 
     @property
     def height(self):
-        height = len(self.dataframe.index)
-        if self.__include_columns:
-            height += 1
-        return height
+        return len(self.dataframe.index) + self.header_height
 
     @property
     def header_height(self):
-        return 1 if self.__include_columns else 0
+        if self.__include_columns:
+            if isinstance(self.dataframe.columns, pa.MultiIndex):
+                return len(self.dataframe.columns.names)
+            return 1
+        return 0
 
     @property
     def row_labels_width(self):
-        return 1 if self.__include_index else 0
+        if self.__include_index:
+            if isinstance(self.dataframe.index, pa.MultiIndex):
+                return len(self.dataframe.index.names)
+            return 1
+        return 0
 
     def get_column_offset(self, col):
         try:
             offset = self.dataframe.columns.get_loc(col)
         except KeyError:
             raise KeyError("Column '%s' not found in table %s" % (col, self.name))
-        if self.__include_index:
-            offset += 1
+        offset += self.row_labels_width
         return offset
+
+    def get_index_offset(self):
+        if self.__include_index:
+            return 0
+        raise KeyError("Table '%s' has no index" % self.name)
 
     def get_row_offset(self, row):
         try:
             offset = self.dataframe.index.get_loc(row)
         except KeyError:
             raise KeyError("Row '%s' not found in table %s" % (row, self.name))
-        if self.__include_columns:
-            offset += 1
+        offset += self.header_height
         return offset
 
     def get_data(self, workbook, row, col):
@@ -190,7 +207,7 @@ class Table(object):
                 # convert everything to objects so mask setting works
                 df = df.astype(object)
 
-                col_offset = 1 if self.__include_index else 0
+                col_offset = self.row_labels_width
                 row_offset = self.header_height
 
                 # resolve all elements and set back into the main dataframe
@@ -210,28 +227,69 @@ class Table(object):
             # add the index and or columns to the values part of the dataframe
             if self.__include_index or self.__include_columns:
                 index = df.index
-                index_name = df.index.name
+
                 if self.__include_columns:
-                    i = 1
-                    while index_name in df.index:
-                        index_name = "%s_%d" % (df.index.name, i)
-                    index = [index_name] + list(df.index.astype(object))
+                    # add the index names to the top of the index to create a new row for the column headers
+                    if isinstance(index, pa.MultiIndex):
+                        index_names = tuple((x or "" for x in df.index.names))
+                        i = 1
+                        while index_names in df.index:
+                            index_names = tuple(("%s_%d" % (x or "", i) for x in df.index.names))
+                            i += 1
+                        index_tuples = [index_names] + list(df.index.astype(object))
+                        if isinstance(df.columns, pa.MultiIndex):
+                            blank_tuple = tuple([None] * len(df.index.names))
+                            index_tuples = ([blank_tuple] * (len(df.columns.levels) - 1)) + index_tuples
+                        index = pa.MultiIndex.from_tuples(index_tuples)
+                    else:
+                        index_name = df.index.name
+                        i = 1
+                        while index_name in df.index:
+                            index_name = "%s_%d" % (df.index.name, i)
+                            i += 1
+                        index = [index_name] + list(df.index.astype(object))
+                        if isinstance(df.columns, pa.MultiIndex):
+                            index = ([None] * (len(df.columns.levels) - 1)) + index
 
                 columns = df.columns
-                columns_name = df.columns.name
                 if self.__include_index:
-                    i = 1
-                    while columns_name in df.columns:
-                        columns_name = "%s_%d" % (df.columns.name, i)
-                    columns = [columns_name] + list(df.columns.astype(object))
+                    # add the column names to the left of the columns to create a new row for the index headers
+                    if isinstance(columns, pa.MultiIndex):
+                        columns_names = tuple((x or "" for x in df.columns.names))
+                        i = 1
+                        while columns_names in df.columns:
+                            columns_names = tuple(("%s_%d" % (x or "", i) for x in df.columns.names))
+                            i += 1
+                        column_tuples = [columns_names] + list(df.columns.astype(object))
+                        if isinstance(df.index, pa.MultiIndex):
+                            blank_tuple = tuple([None] * len(df.columns.names))
+                            column_tuples = ([blank_tuple] * (len(df.index.levels) - 1)) + column_tuples
+                        columns = pa.MultiIndex.from_tuples(column_tuples)
+                    else:
+                        columns_name = df.columns.name or ""
+                        i = 1
+                        while columns_name in df.columns:
+                            columns_name = "%s_%d" % (df.columns.name, i)
+                            i += 1
+                        columns = [columns_name] + list(df.columns.astype(object))
+                        if isinstance(df.index, pa.MultiIndex):
+                            columns = ([None] * (len(df.index.levels) - 1)) + columns
 
                 df = df.reindex(index=index, columns=columns).astype(object)
 
                 if self.__include_columns:
-                    df.iloc[0, :] = df.columns
+                    if isinstance(df.columns, pa.MultiIndex):
+                        for i in range(len(df.columns.levels)):
+                            df.iloc[i, :] = [c[i] for c in df.columns.values]
+                    else:
+                        df.iloc[0, :] = df.columns
 
                 if self.__include_index:
-                    df.iloc[:, 0] = df.index
+                    if isinstance(df.index, pa.MultiIndex):
+                        for i in range(len(df.index.levels)):
+                            df.iloc[:, i] = [c[i] for c in df.index.values]
+                    else:
+                        df.iloc[:, 0] = df.index
 
             # return the values as an np array
             return df.values

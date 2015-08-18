@@ -6,7 +6,8 @@ the rows can be iterated over, and any expressions present in the
 tables will be resolved to absolute cell references.
 """
 from .style import CellStyle
-from .table import ArrayFormula
+from .table import ArrayFormula, Value
+from .expression import Expression
 import re
 import datetime as dt
 import pandas as pa
@@ -24,10 +25,12 @@ class Worksheet(object):
 
     :param str name: Worksheet name.
     """
+    _xlsx_unsupported_types = tuple()
 
     def __init__(self, name="Sheet1"):
         self.__name = name
         self.__tables = {}
+        self.__values = {}
         self.__charts = []
         self.__next_row = 0
         self.__groups = []
@@ -55,6 +58,17 @@ class Worksheet(object):
         self.__next_row = max(row + table.height + row_spaces, self.__next_row)
         self.__tables[name] = (table, (row, col))
         return row, col
+
+    def add_value(self, value, row, col):
+        """
+        Adds a single value (cell) to a worksheet at (row, col).
+        Return the (row, col) where the value has been put.
+
+        :param value: Value to write to the sheet.
+        :param row: Row where the value should be written.
+        :param col: Column where the value should be written.
+        """
+        self.__values[(row, col)] = value
 
     def add_chart(self, chart, row, col):
         """
@@ -128,12 +142,23 @@ class Worksheet(object):
             
             resolved_tables.append((name, data, upper_left, lower_right))
 
+        for row, col in self.__values.keys():
+            max_width = max(max_width, row+1)
+            max_height = max(max_height, col+1)
+
         # Build the whole table up-front. Doing it row by row is too slow.
         table = [[None] * max_width for i in range(max_height)]
         for name, data, upper_left, lower_right in resolved_tables:
             for i, r in enumerate(range(upper_left[0], lower_right[0]+1)):
                 for j, c in enumerate(range(upper_left[1], lower_right[1]+1)):
                     table[r][c] = data[i][j]
+
+        for (r, c), value in self.__values.items():
+            if isinstance(value, Value):
+                value = value.value
+            if isinstance(value, Expression):
+                value = value.get_formula(workbook, r, c)
+            table[r][c] = value
 
         for row in table:
             yield row
@@ -179,9 +204,6 @@ class Worksheet(object):
                 for r in range(row + table.header_height, row + table.height):
                     ws_styles[(r, c)] = table.index_style or _get_style(bold=True)
 
-            bg_cols = None
-            num_bg_cols = 0
-            border = table.style.border
             if table.style.stripe_colors or table.style.border:
                 num_bg_cols = len(table.style.stripe_colors) if \
                     table.style.stripe_colors else 1
@@ -192,11 +214,10 @@ class Worksheet(object):
                                                      table.height)):
                     for c in range(col, col + table.width):
                         bg_col = bg_cols[i % num_bg_cols] if bg_cols else None
-                        style = _get_style(bold=None, bg_col=bg_col, border=border)
+                        style = _get_style(bold=None, bg_col=bg_col, border=table.style.border)
                         if (row + row_offset, c) in ws_styles:
-                            ws_styles[(row + row_offset, c)] += style
-                        else:
-                            ws_styles[(row + row_offset, c)] = style
+                            style = style + ws_styles[(row + row_offset, c)]
+                        ws_styles[(row + row_offset, c)] = style
 
             for col_name, col_style in table.column_styles.items():
                 try:
@@ -204,15 +225,19 @@ class Worksheet(object):
                 except KeyError:
                     continue
                 for i, r in enumerate(range(row + table.header_height, row + table.height)):
-                    bg_col = None
-                    style = col_style
-                    if bg_cols:
-                        bg_col = bg_cols[i % num_bg_cols]
-                        if style.bg_color != bg_col:
-                            style = copy(style)
-                            style.bg_color = bg_col
+                    if (r, col + col_offset) in ws_styles:
+                        col_style = col_style + ws_styles[(r, col + col_offset)]
+                    ws_styles[(r, col + col_offset)] = col_style
 
-                    ws_styles[(r, col + col_offset)] = style
+            for row_name, row_style in table.row_styles.items():
+                try:
+                    row_offset = table.get_row_offset(row_name)
+                except KeyError:
+                    continue
+                for i, c in enumerate(range(col + table.row_labels_width, col + table.width)):
+                    if (row + row_offset, c) in ws_styles:
+                        row_style = row_style + ws_styles[(row + row_offset, c)]
+                    ws_styles[(row + row_offset, c)] = row_style
 
             for (row_name, col_name), cell_style in table.cell_styles.items():
                 try:
@@ -221,12 +246,17 @@ class Worksheet(object):
                 except KeyError:
                     continue
                 style = cell_style
-                if bg_cols:
-                    bg_col = bg_cols[(row_offset - table.header_height) % num_bg_cols]
-                    if style.bg_color != bg_col:
-                        style = copy(style)
-                        style.bg_color = bg_col
+                if (row + row_offset, col + col_offset) in ws_styles:
+                    style = style + ws_styles[(row + row_offset, col + col_offset)]
                 ws_styles[(row + row_offset, col + col_offset)] = style
+
+        for (row, col), value in self.__values.items():
+            if isinstance(value, Value):
+                style = value.style
+                if style:
+                    if (row, col) in ws_styles:
+                        style = style + ws_styles[(row, col)]
+                    ws_styles[(row, col)] = style
 
         return ws_styles
 
@@ -435,10 +465,18 @@ class Worksheet(object):
                     elif cell.startswith("{="):
                         continue
                     else:
-                        cell_str = cell.encode("ascii", "xmlcharrefreplace").decode("ascii")
-                        ws.write(ir, ic, cell_str, style)
+                        ws.write(ir, ic, cell, style)
                 else:
-                    ws.write(ir, ic, cell, style)
+                    if isinstance(cell, self._xlsx_unsupported_types):
+                        ws.write(ir, ic, str(cell), style)
+                    else:
+                        try:
+                            ws.write(ir, ic, cell, style)
+                        except TypeError:
+                            ws.write(ir, ic, str(cell), style)
+                            unsupported_types = set(self._xlsx_unsupported_types)
+                            unsupported_types.add(type(cell))
+                            self.__class__._xlsx_unsupported_types = tuple(unsupported_types)
 
         # set any array formulas
         for table, (row, col) in self.__tables.values():

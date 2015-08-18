@@ -72,6 +72,7 @@ class Chart(object):
         Adds a series to the chart.
         
         :param values: A :py:class:`xltable.Expression` object that evaluates to the data series.
+        :param categories: A :py:class:`xltable.Expression` object that evaluates to the data series.
         :param name: Name to show in the legend for the series
         :param line: Line style, eg {'color': 'blue', 'width': 3.25} or {'none': True}
         :param marker: dict specifying how the markers should look, eg {type: square}.

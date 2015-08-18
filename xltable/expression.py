@@ -111,6 +111,28 @@ class Column(Expression):
                     _to_addr(None, top + table.height - 1, left + col_offset, fixed=True))
 
 
+class Index(Expression):
+    """
+    Reference to a table's index.
+
+    :param include_header: True if this expression should include the index header.
+    :param table: Name of table that owns the index, if not the table this expression is in.
+    """
+    def __init__(self, include_header=False, table=None):
+        self.__include_header = include_header
+        self.__table = table
+
+    def resolve(self, workbook, row, col):
+        table, worksheet = workbook.get_table(self.__table)
+        top, left = worksheet.get_table_pos(table.name)
+        col_offset = table.get_index_offset()
+        row_offset = 0 if self.__include_header else table.header_height
+        return "'%s'!%s:%s" % (
+                    worksheet.name,
+                    _to_addr(None, top + row_offset, left + col_offset, fixed=True),
+                    _to_addr(None, top + table.height - 1, left + col_offset, fixed=True))
+
+
 class Range(Expression):
     """
     Reference to a range in a table.
