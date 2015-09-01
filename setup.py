@@ -9,7 +9,7 @@ setup_params = dict(
     description="A Python package to ease writing tables of data to Excel",
     packages=find_packages(),
     test_suite="nose.collector",
-    version="0.2",
+    version="0.2.1",
     install_requires=["pandas>=0.12.0"],
     extras_require={
         "xlsxwriter": ["xlsxwriter>=0.7.2"],

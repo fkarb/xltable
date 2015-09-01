@@ -225,9 +225,10 @@ class Worksheet(object):
                 except KeyError:
                     continue
                 for i, r in enumerate(range(row + table.header_height, row + table.height)):
+                    style = col_style
                     if (r, col + col_offset) in ws_styles:
-                        col_style = col_style + ws_styles[(r, col + col_offset)]
-                    ws_styles[(r, col + col_offset)] = col_style
+                        style = style + ws_styles[(r, col + col_offset)]
+                    ws_styles[(r, col + col_offset)] = style
 
             for row_name, row_style in table.row_styles.items():
                 try:
@@ -235,9 +236,10 @@ class Worksheet(object):
                 except KeyError:
                     continue
                 for i, c in enumerate(range(col + table.row_labels_width, col + table.width)):
+                    style = row_style
                     if (row + row_offset, c) in ws_styles:
-                        row_style = row_style + ws_styles[(row + row_offset, c)]
-                    ws_styles[(row + row_offset, c)] = row_style
+                        style = style + ws_styles[(row + row_offset, c)]
+                    ws_styles[(row + row_offset, c)] = style
 
             for (row_name, col_name), cell_style in table.cell_styles.items():
                 try:
