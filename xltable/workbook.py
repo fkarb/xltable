@@ -147,7 +147,7 @@ class Workbook(object):
             name = self.active_table.name
 
             if self.active_worksheet:
-                table = self.active_worksheet.get_table()
+                table = self.active_worksheet.get_table(name)
                 assert table is self.active_table, "Active table is not from the active sheet"
                 return table, self.active_worksheet
 
