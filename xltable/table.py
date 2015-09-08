@@ -220,9 +220,8 @@ class Table(object):
                 df[mask_df] = index_df[mask_df].applymap(partial(get_formula, df))
 
             # replace any Cell instances with their value
-            mask_df = df.applymap(lambda x: isinstance(x, Value))
-            if mask_df.any().any():
-                df[mask_df] = df[mask_df].applymap(lambda x: x.value if isinstance(x, Value) else x)
+            if df.applymap(lambda x: isinstance(x, Value)).any().any():
+                df = df.applymap(lambda x: x.value if isinstance(x, Value) else x)
 
             # add the index and or columns to the values part of the dataframe
             if self.__include_index or self.__include_columns:
