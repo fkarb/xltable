@@ -18,8 +18,8 @@ setup_params = dict(
     },
     tests_require=["nose>=1.2.1"],
     author="Renshaw Bay",
-    author_email="technology@renshawbay.com",
-    url="https://github.com/renshawbay/xltable",
+    author_email="tony@pyxll.com",
+    url="https://github.com/fkarb/xltable",
     classifiers=["License :: OSI Approved :: MIT License"],
 )
 
