@@ -227,7 +227,7 @@ class Worksheet(object):
                 for i, r in enumerate(range(row + table.header_height, row + table.height)):
                     style = col_style
                     if (r, col + col_offset) in ws_styles:
-                        style = style + ws_styles[(r, col + col_offset)]
+                        style = ws_styles[(r, col + col_offset)] + style
                     ws_styles[(r, col + col_offset)] = style
 
             for row_name, row_style in table.row_styles.items():
@@ -238,7 +238,7 @@ class Worksheet(object):
                 for i, c in enumerate(range(col + table.row_labels_width, col + table.width)):
                     style = row_style
                     if (row + row_offset, c) in ws_styles:
-                        style = style + ws_styles[(row + row_offset, c)]
+                        style = ws_styles[(row + row_offset, c)] + style
                     ws_styles[(row + row_offset, c)] = style
 
             for (row_name, col_name), cell_style in table.cell_styles.items():
@@ -249,7 +249,7 @@ class Worksheet(object):
                     continue
                 style = cell_style
                 if (row + row_offset, col + col_offset) in ws_styles:
-                    style = style + ws_styles[(row + row_offset, col + col_offset)]
+                    style = ws_styles[(row + row_offset, col + col_offset)] + style
                 ws_styles[(row + row_offset, col + col_offset)] = style
 
         for (row, col), value in self.__values.items():
