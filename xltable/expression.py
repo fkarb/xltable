@@ -1,6 +1,7 @@
 """
 Expressions for building excel formulas without having to use concrete positions.
 """
+import operator
 import re
 
 
@@ -49,6 +50,33 @@ class Expression(object):
 
     def get_formula(self, workbook, row, col):
         return "=%s" % self._strip(self.resolve(workbook, row, col))
+
+    @property
+    def value(self):
+        """Set a calculated value for this Expression.
+        Used when writing formulas using XlsxWriter to give cells
+        an initial value when the sheet is loaded without being calculated.
+        """
+        try:
+            if isinstance(self.__value, Expression):
+                return self.__value.value
+            return self.__value
+        except AttributeError:
+            return 0
+
+    @property
+    def has_value(self):
+        """return True if value has been set"""
+        try:
+            if isinstance(self.__value, Expression):
+                return self.__value.has_value
+            return True
+        except AttributeError:
+            return False
+
+    @value.setter
+    def value(self, value):
+        self.__value = value
 
     @staticmethod
     def _strip(x):
@@ -208,10 +236,27 @@ class BinOp(Expression):
     """
     Internal use - composite expression combining two expression with a binary operator.
     """
+    __operators = {
+        "+": operator.add,
+        "-": operator.sub,
+        "*": operator.mul,
+        "/": operator.truediv,
+        ">": operator.gt,
+        "<": operator.lt,
+        "<=": operator.le,
+        ">=": operator.ge,
+        "!=": operator.ne,
+        "=": operator.eq,
+        "&": operator.and_,
+        "|": operator.or_,
+    }
+
     def __init__(self, lhs, rhs, op):
         self.__lhs = lhs
         self.__rhs = rhs
         self.__op = op
+        if lhs.has_value and rhs.has_value:
+            self.value = self.__operators[op](lhs.value, rhs.value)
 
     def resolve(self, workbook, row, col):
         return "(%s%s%s)" % (
@@ -225,6 +270,7 @@ class ConstExpr(Expression):
     Internal use - expression for wrapping constants.
     """
     def __init__(self, value):
+        self.value = value
         self.__value = value
         
     def resolve(self, workbook, row, col):

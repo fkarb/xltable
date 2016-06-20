@@ -180,13 +180,14 @@ class Table(object):
         offset += self.header_height
         return offset
 
-    def get_data(self, workbook, row, col):
+    def get_data(self, workbook, row, col, formula_values={}):
         """
         :return: 2d numpy array for this table with any formulas resolved to the final
         excel formula.
         :param xltable.Workbook workbook: Workbook the table has been added to.
         :param int row: Row where the table will start in the sheet (used for resolving formulas).
         :param int col: Column where the table will start in the sheet (used for resolving formulas).
+        :param formula_values: dict to add pre-calculated formula values to (keyed by row, col).
         """
         if workbook:
             prev_table = workbook.active_table
@@ -215,7 +216,12 @@ class Table(object):
                     if pa.isnull(element):
                         return element
                     r, c = element
-                    return df.iget_value(r, c).get_formula(workbook, r + row_offset, c + col_offset)
+                    expr = df.iget_value(r, c)
+                    r += row_offset
+                    c += col_offset
+                    if expr.has_value:
+                        formula_values[(r + row, c + col)] = expr.value
+                    return expr.get_formula(workbook, r, c)
 
                 df[mask_df] = index_df[mask_df].applymap(partial(get_formula, df))
 

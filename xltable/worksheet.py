@@ -116,12 +116,15 @@ class Worksheet(object):
         """
         Yield rows as lists of data.
 
-        The data is exactky as it is in the source pandas DataFrames and
+        The data is exactly as it is in the source pandas DataFrames and
         any formulas are not resolved.
         """
         resolved_tables = []
         max_height = 0
         max_width = 0
+
+        # while yielding rows __formula_values is updated with any formula values set on Expressions
+        self.__formula_values = {}
 
         for name, (table, (row, col)) in list(self.__tables.items()):
             # get the resolved 2d data array from the table
@@ -130,7 +133,7 @@ class Worksheet(object):
             # get_table/get_table_pos, which should return the current table.
             #
             self.__tables[None] = (table, (row, col))
-            data = table.get_data(workbook, row, col)
+            data = table.get_data(workbook, row, col, self.__formula_values)
             del self.__tables[None]
 
             height, width = data.shape
@@ -157,6 +160,8 @@ class Worksheet(object):
             if isinstance(value, Value):
                 value = value.value
             if isinstance(value, Expression):
+                if value.has_value:
+                    self.__formula_values[(r, c)] = value.value
                 value = value.get_formula(workbook, r, c)
             table[r][c] = value
 
@@ -463,7 +468,8 @@ class Worksheet(object):
                 style = ws_styles.get((ir, ic), plain_style)
                 if isinstance(cell, str):
                     if cell.startswith("="):
-                        ws.write_formula(ir, ic, cell, style)
+                        formula_value = self.__formula_values.get((ir, ic), 0)
+                        ws.write_formula(ir, ic, cell, style, value=formula_value)
                     elif cell.startswith("{="):
                         continue
                     else:
