@@ -203,11 +203,21 @@ class Worksheet(object):
         for table, (row, col) in self.__tables.values():
             for r in range(row, row + table.header_height):
                 for c in range(col, col + table.width):
-                    ws_styles[(r, c)] = table.header_style or _get_style(bold=True)
+                    if isinstance(table.header_style, dict):
+                        col_name = table.dataframe.columns[c]
+                        style = table.header_style.get(col_name, _get_style(bold=True))
+                    else:
+                        style = table.header_style or _get_style(bold=True)
+                    ws_styles[(r, c)] = style
 
             for c in range(col, col + table.row_labels_width):
                 for r in range(row + table.header_height, row + table.height):
-                    ws_styles[(r, c)] = table.index_style or _get_style(bold=True)
+                    if isinstance(table.index_style, dict):
+                        row_name = table.dataframe.index[r]
+                        style = table.index_style.get(row_name, _get_style(bold=True))
+                    else:
+                        style = table.index_style or _get_style(bold=True)
+                    ws_styles[(r, c)] = style
 
             if table.style.stripe_colors or table.style.border:
                 num_bg_cols = len(table.style.stripe_colors) if \
