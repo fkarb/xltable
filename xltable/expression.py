@@ -15,6 +15,10 @@ class Expression(object):
 
     Expressions may be combined using binary operators.
     """
+    def __init__(self, value=None):
+        if value is not None:
+            self.value = value
+
     def __add__(self, other):
         return BinOp(self, _make_expr(other), "+")
 
@@ -96,7 +100,8 @@ class Cell(Expression):
     :param row_offset: Offset from the row, used when resolving.
     :param table: Name of table the column is in, if not in the same table this expression is in.
     """
-    def __init__(self, col, row=None, row_offset=0, table=None):
+    def __init__(self, col, row=None, row_offset=0, table=None, **kwargs):
+        super(Cell, self).__init__(**kwargs)
         self.__col = col
         self.__row = row
         self.__row_offset = row_offset
@@ -123,7 +128,8 @@ class Column(Expression):
     :param include_header: True if this expression should include the column header.
     :param table: Name of table the column is in, if not in the same table this expression is in.
     """
-    def __init__(self, col, include_header=False, table=None):
+    def __init__(self, col, include_header=False, table=None, **kwargs):
+        super(Column, self).__init__(**kwargs)
         self.__col = col
         self.__include_header = include_header
         self.__table = table
@@ -146,7 +152,8 @@ class Index(Expression):
     :param include_header: True if this expression should include the index header.
     :param table: Name of table that owns the index, if not the table this expression is in.
     """
-    def __init__(self, include_header=False, table=None):
+    def __init__(self, include_header=False, table=None, **kwargs):
+        super(Index, self).__init__(**kwargs)
         self.__include_header = include_header
         self.__table = table
 
@@ -178,7 +185,9 @@ class Range(Expression):
                  top_row=None,
                  bottom_row=None,
                  include_header=True,
-                 table=None):
+                 table=None,
+                 **kwargs):
+        super(Range, self).__init__(**kwargs)
         self.__left_col = left_col
         self.__right_col = right_col
         self.__top = top_row
@@ -219,7 +228,8 @@ class Formula(Expression):
     :param name: Name of Excel function, eg "SUMPRODUCT".
     :param args: Expressions to use as arguments to the function.
     """
-    def __init__(self, name, *args):
+    def __init__(self, name, *args, **kwargs):
+        super(Formula, self).__init__(**kwargs)
         self.__name = name
         self.__args = args
 
@@ -251,7 +261,8 @@ class BinOp(Expression):
         "|": operator.or_,
     }
 
-    def __init__(self, lhs, rhs, op):
+    def __init__(self, lhs, rhs, op, **kwargs):
+        super(BinOp, self).__init__(**kwargs)
         self.__lhs = lhs
         self.__rhs = rhs
         self.__op = op
@@ -269,7 +280,8 @@ class ConstExpr(Expression):
     """
     Internal use - expression for wrapping constants.
     """
-    def __init__(self, value):
+    def __init__(self, value, **kwargs):
+        super(ConstExpr, self).__init__(**kwargs)
         self.value = value
         self.__value = value
         
