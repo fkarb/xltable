@@ -457,7 +457,20 @@ class Worksheet(object):
                 if cell_style.text_wrap:
                     style.set_text_wrap()
                 if cell_style.border:
-                    style.set_border(cell_style.border)
+                    if isinstance(cell_style.border, frozenset):
+                        for border_position, border_style in cell_style.border:
+                            if border_position == "bottom":
+                                style.set_bottom(border_style)
+                            elif border_position == "top":
+                                style.set_top(border_style)
+                            elif border_position == "left":
+                                style.set_top(border_style)
+                            elif border_position == "right":
+                                style.set_top(border_style)
+                            else:
+                                raise AssertionError("Unknown border position '%s'." % border_position)
+                    else:
+                        style.set_border(cell_style.border)
                 if cell_style.align:
                     style.set_align(cell_style.align)
                 if cell_style.valign:

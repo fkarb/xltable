@@ -31,6 +31,8 @@ class CellStyle(object):
      or xx-large.
     :param int text_color: Text color as an RGB value, e.g. 0xFF0000 for red.
     :param int bg_color: Background color as an RGB value, e.g. 0xFF0000 for red.
+    :param border: Can only be used when writing using xlsxwriter. Can be an xlsxwriter border style
+      index (integer) or a dictionary  of styles keyed by border position (top, bottom, left, right).
     """
     _sizes = {
         "x-small": 6,
@@ -68,6 +70,8 @@ class CellStyle(object):
         self.text_color = text_color
         self.bg_color = bg_color
         self.text_wrap = text_wrap
+        if isinstance(border, dict):
+            border = frozenset(border.items())
         self.border = border
         self.align = align
         self.valign = valign
