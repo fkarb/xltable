@@ -98,6 +98,23 @@ class Table(object):
         self.header_style = header_style
         self.index_style = index_style
 
+    def clone(self, **kwargs):
+        """Create a clone of the Table, optionally with some properties changed"""
+        init_kwargs = {
+            "name": self.__name,
+            "dataframe": self.__df,
+            "include_columns": self.__include_columns,
+            "include_index": self.__include_index,
+            "style": self.__style,
+            "column_styles": self.__col_styles,
+            "column_widths": self.__column_widths,
+            "row_styles": self.__row_styles,
+            "header_style": self.header_style,
+            "index_style": self.index_style
+        }
+        init_kwargs.update(kwargs)
+        return self.__class__(**init_kwargs)
+
     @property
     def name(self):
         return self.__name
@@ -195,6 +212,10 @@ class Table(object):
         try:
             df = self.dataframe.copy()
 
+            # replace any Value instances with their value
+            if df.applymap(lambda x: isinstance(x, Value)).any().any():
+                df = df.applymap(lambda x: x.value if isinstance(x, Value) else x)
+
             # create a mask for elements that are expressions
             mask_df = df.applymap(lambda x: isinstance(x, Expression))
 
@@ -224,10 +245,6 @@ class Table(object):
                     return expr.get_formula(workbook, r, c)
 
                 df[mask_df] = index_df[mask_df].applymap(partial(get_formula, df))
-
-            # replace any Cell instances with their value
-            if df.applymap(lambda x: isinstance(x, Value)).any().any():
-                df = df.applymap(lambda x: x.value if isinstance(x, Value) else x)
 
             # add the index and or columns to the values part of the dataframe
             if self.__include_index or self.__include_columns:
