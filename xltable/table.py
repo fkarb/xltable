@@ -16,6 +16,10 @@ class Value(object):
     :param xltable.CellStyle: Style to be applied to the cell.
     """
     def __init__(self, value, style=None):
+        if isinstance(value, Value):
+            if value.style:
+                style = value.style + style if style else value.style
+            value = value.value
         self.value = value
         self.style = style
 
