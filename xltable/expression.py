@@ -99,25 +99,38 @@ class Cell(Expression):
     :param row: Row label this refers to, or None to use the current row.
     :param row_offset: Offset from the row, used when resolving.
     :param table: Name of table the column is in, if not in the same table this expression is in.
+    :param col_fixed: If True when converted to an address the column will be fixed.
+    :param row_fixed: If True when converted to an address the row will be fixed.
     """
-    def __init__(self, col, row=None, row_offset=0, table=None, **kwargs):
+    def __init__(self, col, row=None, row_offset=0, table=None, col_fixed=None, row_fixed=None, **kwargs):
         super(Cell, self).__init__(**kwargs)
         self.__col = col
         self.__row = row
         self.__row_offset = row_offset
         self.__table = table
+        self.__col_fixed = col_fixed
+        self.__row_fixed = row_fixed
 
     def resolve(self, workbook, row, col):
         table, worksheet = workbook.get_table(self.__table)
         top, left = worksheet.get_table_pos(table.name)
         col_offset = table.get_column_offset(self.__col)
 
-        fixed = False
+        # if the row has been given use fixed references in the formula unless they've been set explicitly
         if self.__row is not None:
             row = table.get_row_offset(self.__row)
-            fixed = True
+            row_fixed = self.__row_fixed if self.__row_fixed is not None else True
+            col_fixed = self.__col_fixed if self.__col_fixed is not None else True
+        else:
+            # otherwise use un-fixed addresses, unless set explicitly
+            row_fixed = self.__row_fixed if self.__row_fixed is not None else False
+            col_fixed = self.__col_fixed if self.__col_fixed is not None else False
 
-        return _to_addr(worksheet.name, top + row + self.__row_offset, left + col_offset, fixed=fixed)
+        return _to_addr(worksheet.name,
+                        top + row + self.__row_offset,
+                        left + col_offset,
+                        row_fixed=row_fixed,
+                        col_fixed=col_fixed)
 
     
 class Column(Expression):
@@ -127,12 +140,16 @@ class Column(Expression):
     :param col: Column label this refers to.
     :param include_header: True if this expression should include the column header.
     :param table: Name of table the column is in, if not in the same table this expression is in.
+    :param col_fixed: If True when converted to an address the column will be fixed.
+    :param row_fixed: If True when converted to an address the row will be fixed.
     """
-    def __init__(self, col, include_header=False, table=None, **kwargs):
+    def __init__(self, col, include_header=False, table=None, col_fixed=True, row_fixed=True, **kwargs):
         super(Column, self).__init__(**kwargs)
         self.__col = col
         self.__include_header = include_header
         self.__table = table
+        self.__col_fixed = col_fixed
+        self.__row_fixed = row_fixed
 
     def resolve(self, workbook, row, col):
         table, worksheet = workbook.get_table(self.__table)
@@ -141,8 +158,12 @@ class Column(Expression):
         row_offset = 0 if self.__include_header else table.header_height 
         return "'%s'!%s:%s" % (
                     worksheet.name,
-                    _to_addr(None, top + row_offset, left + col_offset, fixed=True),
-                    _to_addr(None, top + table.height - 1, left + col_offset, fixed=True))
+                    _to_addr(None, top + row_offset, left + col_offset,
+                             row_fixed=self.__row_fixed,
+                             col_fixed=self.__col_fixed),
+                    _to_addr(None, top + table.height - 1, left + col_offset,
+                             row_fixed=self.__row_fixed,
+                             col_fixed=self.__col_fixed))
 
 
 class Index(Expression):
@@ -151,11 +172,15 @@ class Index(Expression):
 
     :param include_header: True if this expression should include the index header.
     :param table: Name of table that owns the index, if not the table this expression is in.
+    :param col_fixed: If True when converted to an address the column will be fixed.
+    :param row_fixed: If True when converted to an address the row will be fixed.
     """
-    def __init__(self, include_header=False, table=None, **kwargs):
+    def __init__(self, include_header=False, table=None, col_fixed=True, row_fixed=True, **kwargs):
         super(Index, self).__init__(**kwargs)
         self.__include_header = include_header
         self.__table = table
+        self.__col_fixed = col_fixed
+        self.__row_fixed = row_fixed
 
     def resolve(self, workbook, row, col):
         table, worksheet = workbook.get_table(self.__table)
@@ -164,8 +189,12 @@ class Index(Expression):
         row_offset = 0 if self.__include_header else table.header_height
         return "'%s'!%s:%s" % (
                     worksheet.name,
-                    _to_addr(None, top + row_offset, left + col_offset, fixed=True),
-                    _to_addr(None, top + table.height - 1, left + col_offset, fixed=True))
+                    _to_addr(None, top + row_offset, left + col_offset,
+                             row_fixed=self.__row_fixed,
+                             col_fixed=self.__col_fixed),
+                    _to_addr(None, top + table.height - 1, left + col_offset,
+                             row_fixed=self.__row_fixed,
+                             col_fixed=self.__col_fixed))
 
 
 class Range(Expression):
@@ -178,6 +207,8 @@ class Range(Expression):
     :param bottom_row: Bottom most row label, or None to select to the bottom of the table.
     :param include_header: Include table header in the range.
     :param table: Name of table the column is in, if not in the same table this expression is in.
+    :param col_fixed: If True when converted to an address the column will be fixed.
+    :param row_fixed: If True when converted to an address the row will be fixed.
     """
     def __init__(self,
                  left_col,
@@ -186,6 +217,8 @@ class Range(Expression):
                  bottom_row=None,
                  include_header=True,
                  table=None,
+                 col_fixed=True,
+                 row_fixed=True,
                  **kwargs):
         super(Range, self).__init__(**kwargs)
         self.__left_col = left_col
@@ -194,6 +227,8 @@ class Range(Expression):
         self.__bottom = bottom_row
         self.__include_header = include_header
         self.__table = table
+        self.__col_fixed = col_fixed
+        self.__row_fixed = row_fixed
 
     def resolve(self, workbook, row, col):
         table, worksheet = workbook.get_table(self.__table)
@@ -213,8 +248,13 @@ class Range(Expression):
 
         return "'%s'!%s:%s" % (
                     worksheet.name,
-                    _to_addr(None, top + top_row_offset, left + left_col_offset, fixed=True),
-                    _to_addr(None, top + bottom_row_offset, left + right_col_offset, fixed=True))
+                    _to_addr(None, top + top_row_offset, left + left_col_offset,
+                             row_fixed=self.__row_fixed,
+                             col_fixed=self.__col_fixed),
+                    _to_addr(None, top + bottom_row_offset, left + right_col_offset,
+                             row_fixed=self.__row_fixed,
+                             col_fixed=self.__col_fixed))
+
 
 class Formula(Expression):
     """
@@ -293,7 +333,7 @@ class ConstExpr(Expression):
         return str(self.__value)
 
 
-def _to_addr(worksheet, row, col, fixed=False):
+def _to_addr(worksheet, row, col, row_fixed=False, col_fixed=False):
     """converts a (0,0) based coordinate to an excel address"""
     addr = ""
     A = ord('A')
@@ -303,9 +343,9 @@ def _to_addr(worksheet, row, col, fixed=False):
         col = (col - 1) // 26
 
     prefix = ("'%s'!" % worksheet) if worksheet else ""
-    if fixed:
-        return prefix + "$%s$%d" % (addr, row+1)
-    return prefix + "%s%d" % (addr, row+1)
+    col_modifier = "$" if col_fixed else ""
+    row_modifier = "$" if row_fixed else ""
+    return prefix + "%s%s%s%d" % (col_modifier, addr, row_modifier, row+1)
 
 
 def _make_expr(x):
