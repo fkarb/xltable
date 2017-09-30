@@ -7,9 +7,10 @@ from setuptools import find_packages, setup
 setup_params = dict(
     name="xltable",
     description="A Python package to ease writing tables of data to Excel",
+    long_description=open("README.rst").read(),
     packages=find_packages(),
     test_suite="nose.collector",
-    version="0.2.10",
+    version="0.2.11",
     install_requires=["pandas>=0.12.0"],
     extras_require={
         "xlsxwriter": ["xlsxwriter>=0.7.2"],

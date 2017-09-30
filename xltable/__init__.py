@@ -28,6 +28,11 @@ tables in the same workbook.
 As well as writing tables to Excel, :py:mod:`xltable` can also write charts using
 tables as source data.
 
+Integrating xltable into Excel can be done using PyXLL, https://www.pyxll.com.
+PyXLL embeds a Python interpreter within Excel and makes it possible to use Excel as a
+front end user interface to Python code. For example, you could configure a custom ribbon
+control for users to run Python reports and have the results written back to Excel.
+
 Example
 -------
 
