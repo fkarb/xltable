@@ -41,7 +41,7 @@ class Expression(object):
         return BinOp(self, _make_expr(other), "=")
 
     def __ne__(self, other):
-        return BinOp(self, _make_expr(other), "!=")
+        return BinOp(self, _make_expr(other), "<>")
 
     def __gt__(self, other):
         return BinOp(self, _make_expr(other), ">")
