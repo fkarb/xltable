@@ -204,7 +204,7 @@ class Table(object):
     def get_data(self, workbook, row, col, formula_values={}):
         """
         :return: 2d numpy array for this table with any formulas resolved to the final
-        excel formula.
+                 excel formula.
         :param xltable.Workbook workbook: Workbook the table has been added to.
         :param int row: Row where the table will start in the sheet (used for resolving formulas).
         :param int col: Column where the table will start in the sheet (used for resolving formulas).
