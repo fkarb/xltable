@@ -284,6 +284,23 @@ class Formula(Expression):
             return self._strip(_make_expr(x).resolve(workbook, row, col))
         args = [to_arg(x) for x in self.__args]
         return "%s(%s)" % (self.__name, ",".join(args))
+    
+    
+class ArrayExpression(Expression):
+    """
+    Wraps an expression in an array formula (ie. surrounds it with {})
+    
+    :param xltable.Expression expr: Expression to be wrapped
+    """
+
+    def __init__(self, expr):
+        self.__expr = expr
+
+    def resolve(self, workbook, row, col):
+        return self.__expr.resolve(workbook, row, col)
+
+    def get_formula(self, workbook, row, col):
+        return "{%s}" % self.__expr.get_formula(workbook, row, col).strip("{}")
 
 
 class BinOp(Expression):
