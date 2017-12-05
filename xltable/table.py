@@ -16,7 +16,7 @@ class Value(object):
     :param xltable.CellStyle: Style to be applied to the cell.
     """
     def __init__(self, value, style=None):
-        if isinstance(value, Value):
+        while isinstance(value, Value):
             if value.style:
                 style = value.style + style if style else value.style
             value = value.value
@@ -241,7 +241,7 @@ class Table(object):
                     if pa.isnull(element):
                         return element
                     r, c = element
-                    expr = df.iget_value(r, c)
+                    expr = df.iat[r, c]
                     r += row_offset
                     c += col_offset
                     if expr.has_value:
