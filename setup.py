@@ -10,7 +10,7 @@ setup_params = dict(
     long_description=open("README.rst").read(),
     packages=find_packages(),
     test_suite="nose.collector",
-    version="0.2.11",
+    version="0.2.12",
     install_requires=["pandas>=0.12.0"],
     extras_require={
         "xlsxwriter": ["xlsxwriter>=0.7.2"],
@@ -18,7 +18,7 @@ setup_params = dict(
         "xlwt": ["xlwt>=0.7.5"]
     },
     tests_require=["nose>=1.2.1"],
-    author="Renshaw Bay",
+    author="Tony Roberts",
     author_email="tony@pyxll.com",
     url="https://github.com/fkarb/xltable",
     classifiers=["License :: OSI Approved :: MIT License"],

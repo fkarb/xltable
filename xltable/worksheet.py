@@ -334,9 +334,22 @@ class Worksheet(object):
                 worksheet.Cells.Interior.ColorIndex = 0
                 worksheet.Cells.NumberFormat = "General"
 
+            # get any array formula tables
+            array_formula_tables = []
+            for table, (row, col) in self.__tables.values():
+                if isinstance(table, ArrayFormula):
+                    array_formula_tables.append((row, col, row + table.height, col + table.width))
+
+            def _is_in_array_formula_table(row, col):
+                """returns True if this formula cell is part of an array formula table"""
+                for top, left, bottom, right in array_formula_tables:
+                    if bottom >= row >= top and left <= col <= right:
+                        return True
+                return False
+
             origin = worksheet.Range("A1")
             xl_cell = origin
-            for row in self.iterrows(workbook):
+            for r, row in enumerate(self.iterrows(workbook)):
                 row = _to_pywintypes(row)
 
                 # set the value and formulae to the excel range (it's much quicker to
@@ -346,14 +359,22 @@ class Worksheet(object):
                     xl_row = worksheet.Range(xl_cell, xl_cell.Offset(1, len(row)))
                     xl_row.Value = row
                 else:
-                    for i, value in enumerate(row):
+                    for c, value in enumerate(row):
                         if value is not None:
-                            xl_cell.Offset(1, 1 + i).Value = value
+                            xl_cell.Offset(1, 1 + c).Value = value
 
-                for i, value in enumerate(row):
-                    if isinstance(value, str) and value.startswith("="):
-                        xl_cell.Offset(1, 1 + i).Formula = value
-                
+                for c, value in enumerate(row):
+                    if isinstance(value, str):
+                        if value.startswith("="):
+                            formula_value = self.__formula_values.get((r, c), 0)
+                            xl_cell.Offset(1, 1 + c).Value = formula_value
+                            xl_cell.Offset(1, 1 + c).Formula = value
+                        elif value.startswith("{=") \
+                        and not _is_in_array_formula_table(r, c):
+                            formula_value = self.__formula_values.get((r, c), 0)
+                            xl_cell.Offset(1, 1 + c).Value = formula_value
+                            xl_cell.Offset(1, 1 + c).FormulaArray = value
+
                 # move to the next row
                 xl_cell = xl_cell.Offset(2, 1)
 
@@ -485,6 +506,19 @@ class Worksheet(object):
         ws_styles = {(r, c): _get_xlsx_style(s) for ((r, c), s) in ws_styles.items()}
         plain_style = _get_xlsx_style(CellStyle())
 
+        # get any array formula tables
+        array_formula_tables = []
+        for table, (row, col) in self.__tables.values():
+            if isinstance(table, ArrayFormula):
+                array_formula_tables.append((row, col, row + table.height, col + table.width))
+
+        def _is_in_array_formula_table(row, col):
+            """returns True if this formula cell is part of an array formula table"""
+            for top, left, bottom, right in array_formula_tables:
+                if bottom >= row >= top and left <= col <= right:
+                    return True
+            return False
+
         # write the rows to the worksheet
         for ir, row in enumerate(self.iterrows(workbook)):
             for ic, cell in enumerate(row):
@@ -494,7 +528,13 @@ class Worksheet(object):
                         formula_value = self.__formula_values.get((ir, ic), 0)
                         ws.write_formula(ir, ic, cell, style, value=formula_value)
                     elif cell.startswith("{="):
-                        continue
+                        # array formulas tables are written after everything else,
+                        # but individual cells can also be array formulas
+                        if not _is_in_array_formula_table(ir, ic):
+                            formula_value = self.__formula_values.get((ir, ic), 0)
+                            ws.write_array_formula(ir, ic, ir, ic,
+                                                   cell, style,
+                                                   value=formula_value)
                     else:
                         ws.write(ir, ic, cell, style)
                 else:

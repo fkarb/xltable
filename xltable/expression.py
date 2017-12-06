@@ -41,7 +41,7 @@ class Expression(object):
         return BinOp(self, _make_expr(other), "=")
 
     def __ne__(self, other):
-        return BinOp(self, _make_expr(other), "!=")
+        return BinOp(self, _make_expr(other), "<>")
 
     def __gt__(self, other):
         return BinOp(self, _make_expr(other), ">")
@@ -98,7 +98,8 @@ class Cell(Expression):
     :param col: Column label this refers to.
     :param row: Row label this refers to, or None to use the current row.
     :param row_offset: Offset from the row, used when resolving.
-    :param table: Name of table the column is in, if not in the same table this expression is in.
+    :param table: Name of table the column is in, if not in the same table this expression is in. 
+                  Use "%s!%s" % (worksheet.name, table.name) if refering to a table in another worksheet
     :param col_fixed: If True when converted to an address the column will be fixed.
     :param row_fixed: If True when converted to an address the row will be fixed.
     """
@@ -140,6 +141,7 @@ class Column(Expression):
     :param col: Column label this refers to.
     :param include_header: True if this expression should include the column header.
     :param table: Name of table the column is in, if not in the same table this expression is in.
+                  Use "%s!%s" % (worksheet.name, table.name) if refering to a table in another worksheet
     :param col_fixed: If True when converted to an address the column will be fixed.
     :param row_fixed: If True when converted to an address the row will be fixed.
     """
@@ -172,6 +174,7 @@ class Index(Expression):
 
     :param include_header: True if this expression should include the index header.
     :param table: Name of table that owns the index, if not the table this expression is in.
+                  Use "%s!%s" % (worksheet.name, table.name) if refering to a table in another worksheet
     :param col_fixed: If True when converted to an address the column will be fixed.
     :param row_fixed: If True when converted to an address the row will be fixed.
     """
@@ -207,6 +210,7 @@ class Range(Expression):
     :param bottom_row: Bottom most row label, or None to select to the bottom of the table.
     :param include_header: Include table header in the range.
     :param table: Name of table the column is in, if not in the same table this expression is in.
+                  Use "%s!%s" % (worksheet.name, table.name) if refering to a table in another worksheet
     :param col_fixed: If True when converted to an address the column will be fixed.
     :param row_fixed: If True when converted to an address the row will be fixed.
     """
@@ -280,6 +284,24 @@ class Formula(Expression):
             return self._strip(_make_expr(x).resolve(workbook, row, col))
         args = [to_arg(x) for x in self.__args]
         return "%s(%s)" % (self.__name, ",".join(args))
+    
+    
+class ArrayExpression(Expression):
+    """
+    Wraps an expression in an array formula (ie. surrounds it with {})
+    
+    :param xltable.Expression expr: Expression to be wrapped
+    """
+
+    def __init__(self, expr):
+        Expression.__init__(self, expr)
+        self.__expr = expr
+
+    def resolve(self, workbook, row, col):
+        return self.__expr.resolve(workbook, row, col)
+
+    def get_formula(self, workbook, row, col):
+        return "{%s}" % self.__expr.get_formula(workbook, row, col).strip("{}")
 
 
 class BinOp(Expression):

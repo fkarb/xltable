@@ -16,7 +16,7 @@ class Value(object):
     :param xltable.CellStyle: Style to be applied to the cell.
     """
     def __init__(self, value, style=None):
-        if isinstance(value, Value):
+        while isinstance(value, Value):
             if value.style:
                 style = value.style + style if style else value.style
             value = value.value
@@ -36,7 +36,7 @@ class Table(object):
     :param bool include_index: Include the index when outputting.
     :param xltable.TableStyle style: Table style, or one of the named styles 'default' or 'plain'.
     :param xltable.CellStyle column_styles: Dictionary of column names to styles or named styles.
-    :param float column_widths: Dictionary of column names to widths.
+    :param dict column_widths: Dictionary of column names to widths.
     :param xltable.CellStyle header_style: Style or named style to use for the cells in the header row.
     :param xltable.CellStyle index_style: Style or named style to use for the cells in the index column.
 
@@ -204,7 +204,7 @@ class Table(object):
     def get_data(self, workbook, row, col, formula_values={}):
         """
         :return: 2d numpy array for this table with any formulas resolved to the final
-        excel formula.
+                 excel formula.
         :param xltable.Workbook workbook: Workbook the table has been added to.
         :param int row: Row where the table will start in the sheet (used for resolving formulas).
         :param int col: Column where the table will start in the sheet (used for resolving formulas).
@@ -214,115 +214,117 @@ class Table(object):
             prev_table = workbook.active_table
             workbook.active_table = self
         try:
-            df = self.dataframe.copy()
-
-            # replace any Value instances with their value
-            if df.applymap(lambda x: isinstance(x, Value)).any().any():
-                df = df.applymap(lambda x: x.value if isinstance(x, Value) else x)
-
-            # create a mask for elements that are expressions
-            mask_df = df.applymap(lambda x: isinstance(x, Expression))
-
-            # resolve any expressions if there are any
-            if mask_df.any().any():
-                # create a dataframe for indexing both into the dataframe and with the column and
-                # row numbers.
-                idx = [[(r, c) for r in range(len((df.index)))] for c in range(len((df.columns)))]
-                index_df = pa.DataFrame(dict(zip(df.columns, idx)), columns=df.columns, index=df.index)
-
-                # convert everything to objects so mask setting works
-                df = df.astype(object)
-
-                col_offset = self.row_labels_width
-                row_offset = self.header_height
-
-                # resolve all elements and set back into the main dataframe
-                def get_formula(df, element):
-                    if pa.isnull(element):
-                        return element
-                    r, c = element
-                    expr = df.iget_value(r, c)
-                    r += row_offset
-                    c += col_offset
-                    if expr.has_value:
-                        formula_values[(r + row, c + col)] = expr.value
-                    return expr.get_formula(workbook, r, c)
-
-                df[mask_df] = index_df[mask_df].applymap(partial(get_formula, df))
-
-            # add the index and or columns to the values part of the dataframe
-            if self.__include_index or self.__include_columns:
-                index = df.index
-
-                if self.__include_columns:
-                    # add the index names to the top of the index to create a new row for the column headers
-                    if isinstance(index, pa.MultiIndex):
-                        index_names = tuple((x or "" for x in df.index.names))
-                        i = 1
-                        while index_names in df.index:
-                            index_names = tuple(("%s_%d" % (x or "", i) for x in df.index.names))
-                            i += 1
-                        index_tuples = [index_names] + list(df.index.astype(object))
-                        if isinstance(df.columns, pa.MultiIndex):
-                            blank_tuple = tuple([None] * len(df.index.names))
-                            index_tuples = ([blank_tuple] * (len(df.columns.levels) - 1)) + index_tuples
-                        index = pa.MultiIndex.from_tuples(index_tuples)
-                    else:
-                        index_name = df.index.name
-                        i = 1
-                        while index_name in df.index:
-                            index_name = "%s_%d" % (df.index.name, i)
-                            i += 1
-                        index = [index_name] + list(df.index.astype(object))
-                        if isinstance(df.columns, pa.MultiIndex):
-                            index = ([None] * (len(df.columns.levels) - 1)) + index
-
-                columns = df.columns
-                if self.__include_index:
-                    # add the column names to the left of the columns to create a new row for the index headers
-                    if isinstance(columns, pa.MultiIndex):
-                        columns_names = tuple((x or "" for x in df.columns.names))
-                        i = 1
-                        while columns_names in df.columns:
-                            columns_names = tuple(("%s_%d" % (x or "", i) for x in df.columns.names))
-                            i += 1
-                        column_tuples = [columns_names] + list(df.columns.astype(object))
-                        if isinstance(df.index, pa.MultiIndex):
-                            blank_tuple = tuple([None] * len(df.columns.names))
-                            column_tuples = ([blank_tuple] * (len(df.index.levels) - 1)) + column_tuples
-                        columns = pa.MultiIndex.from_tuples(column_tuples)
-                    else:
-                        columns_name = df.columns.name or ""
-                        i = 1
-                        while columns_name in df.columns:
-                            columns_name = "%s_%d" % (df.columns.name, i)
-                            i += 1
-                        columns = [columns_name] + list(df.columns.astype(object))
-                        if isinstance(df.index, pa.MultiIndex):
-                            columns = ([None] * (len(df.index.levels) - 1)) + columns
-
-                df = df.reindex(index=index, columns=columns).astype(object)
-
-                if self.__include_columns:
-                    if isinstance(df.columns, pa.MultiIndex):
-                        for i in range(len(df.columns.levels)):
-                            df.iloc[i, :] = [c[i] for c in df.columns.values]
-                    else:
-                        df.iloc[0, :] = df.columns
-
-                if self.__include_index:
-                    if isinstance(df.index, pa.MultiIndex):
-                        for i in range(len(df.index.levels)):
-                            df.iloc[:, i] = [c[i] for c in df.index.values]
-                    else:
-                        df.iloc[:, 0] = df.index
-
-            # return the values as an np array
-            return df.values
-
+            return self._get_data_impl(workbook, row, col, formula_values)
         finally:
             if workbook:
                 workbook.active_table = prev_table
+
+    def _get_data_impl(self, workbook, row, col, formula_values={}):
+        df = self.dataframe.copy()
+
+        # replace any Value instances with their value
+        if df.applymap(lambda x: isinstance(x, Value)).any().any():
+            df = df.applymap(lambda x: x.value if isinstance(x, Value) else x)
+
+        # create a mask for elements that are expressions
+        mask_df = df.applymap(lambda x: isinstance(x, Expression))
+
+        # resolve any expressions if there are any
+        if mask_df.any().any():
+            # create a dataframe for indexing both into the dataframe and with the column and
+            # row numbers.
+            idx = [[(r, c) for r in range(len((df.index)))] for c in range(len((df.columns)))]
+            index_df = pa.DataFrame(dict(zip(df.columns, idx)), columns=df.columns, index=df.index)
+
+            # convert everything to objects so mask setting works
+            df = df.astype(object)
+
+            col_offset = self.row_labels_width
+            row_offset = self.header_height
+
+            # resolve all elements and set back into the main dataframe
+            def get_formula(df, element):
+                if pa.isnull(element):
+                    return element
+                r, c = element
+                expr = df.iat[r, c]
+                r += row_offset
+                c += col_offset
+                if expr.has_value:
+                    formula_values[(r + row, c + col)] = expr.value
+                return expr.get_formula(workbook, r, c)
+
+            df[mask_df] = index_df[mask_df].applymap(partial(get_formula, df))
+
+        # add the index and or columns to the values part of the dataframe
+        if self.__include_index or self.__include_columns:
+            index = df.index
+
+            if self.__include_columns:
+                # add the index names to the top of the index to create a new row for the column headers
+                if isinstance(index, pa.MultiIndex):
+                    index_names = tuple((x or "" for x in df.index.names))
+                    i = 1
+                    while index_names in df.index:
+                        index_names = tuple(("%s_%d" % (x or "", i) for x in df.index.names))
+                        i += 1
+                    index_tuples = [index_names] + list(df.index.astype(object))
+                    if isinstance(df.columns, pa.MultiIndex):
+                        blank_tuple = tuple([None] * len(df.index.names))
+                        index_tuples = ([blank_tuple] * (len(df.columns.levels) - 1)) + index_tuples
+                    index = pa.MultiIndex.from_tuples(index_tuples)
+                else:
+                    index_name = df.index.name
+                    i = 1
+                    while index_name in df.index:
+                        index_name = "%s_%d" % (df.index.name, i)
+                        i += 1
+                    index = [index_name] + list(df.index.astype(object))
+                    if isinstance(df.columns, pa.MultiIndex):
+                        index = ([None] * (len(df.columns.levels) - 1)) + index
+
+            columns = df.columns
+            if self.__include_index:
+                # add the column names to the left of the columns to create a new row for the index headers
+                if isinstance(columns, pa.MultiIndex):
+                    columns_names = tuple((x or "" for x in df.columns.names))
+                    i = 1
+                    while columns_names in df.columns:
+                        columns_names = tuple(("%s_%d" % (x or "", i) for x in df.columns.names))
+                        i += 1
+                    column_tuples = [columns_names] + list(df.columns.astype(object))
+                    if isinstance(df.index, pa.MultiIndex):
+                        blank_tuple = tuple([None] * len(df.columns.names))
+                        column_tuples = ([blank_tuple] * (len(df.index.levels) - 1)) + column_tuples
+                    columns = pa.MultiIndex.from_tuples(column_tuples)
+                else:
+                    columns_name = df.columns.name or ""
+                    i = 1
+                    while columns_name in df.columns:
+                        columns_name = "%s_%d" % (df.columns.name, i)
+                        i += 1
+                    columns = [columns_name] + list(df.columns.astype(object))
+                    if isinstance(df.index, pa.MultiIndex):
+                        columns = ([None] * (len(df.index.levels) - 1)) + columns
+
+            df = df.reindex(index=index, columns=columns).astype(object)
+
+            if self.__include_columns:
+                if isinstance(df.columns, pa.MultiIndex):
+                    for i in range(len(df.columns.levels)):
+                        df.iloc[i, :] = [c[i] for c in df.columns.values]
+                else:
+                    df.iloc[0, :] = df.columns
+
+            if self.__include_index:
+                if isinstance(df.index, pa.MultiIndex):
+                    for i in range(len(df.index.levels)):
+                        df.iloc[:, i] = [c[i] for c in df.index.values]
+                else:
+                    df.iloc[:, 0] = df.index
+
+        # return the values as an np array
+        return df.values
 
 
 class ArrayFormula(Table):
@@ -340,7 +342,7 @@ class ArrayFormula(Table):
     :param bool include_index: Include the index when outputting `value`.
     :param xltable.TableStyle style: Table style, or one of the named styles 'default' or 'plain'.
     :param xltable.CellStyle column_styles: Dictionary of column names to styles or named styles.
-    :param float column_widths: Dictionary of column names to widths.
+    :param dict column_widths: Dictionary of column names to widths.
     """
 
     def __init__(self,
@@ -371,7 +373,7 @@ class ArrayFormula(Table):
     def formula(self):
         return self.__formula
 
-    def get_data(self, workbook, row, col):
+    def _get_data_impl(self, workbook, row, col, formula_values):
         if not self.value:
             self.dataframe[:] = "{%s}" % self.formula.get_formula(workbook, row, col)
-        return super(ArrayFormula, self).get_data(workbook, row, col)
+        return super(ArrayFormula, self)._get_data_impl(workbook, row, col, formula_values)
