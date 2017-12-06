@@ -294,6 +294,7 @@ class ArrayExpression(Expression):
     """
 
     def __init__(self, expr):
+        Expression.__init__(self, expr)
         self.__expr = expr
 
     def resolve(self, workbook, row, col):
