@@ -485,9 +485,9 @@ class Worksheet(object):
                             elif border_position == "top":
                                 style.set_top(border_style)
                             elif border_position == "left":
-                                style.set_top(border_style)
+                                style.set_left(border_style)
                             elif border_position == "right":
-                                style.set_top(border_style)
+                                style.set_right(border_style)
                             else:
                                 raise AssertionError("Unknown border position '%s'." % border_position)
                     else:
