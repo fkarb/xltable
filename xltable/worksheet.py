@@ -204,7 +204,7 @@ class Worksheet(object):
             for r in range(row, row + table.header_height):
                 for c in range(col, col + table.width):
                     if isinstance(table.header_style, dict):
-                        col_name = table.dataframe.columns[c]
+                        col_name = table.dataframe.columns[c - col]
                         style = table.header_style.get(col_name, _get_style(bold=True))
                     else:
                         style = table.header_style or _get_style(bold=True)
@@ -213,7 +213,7 @@ class Worksheet(object):
             for c in range(col, col + table.row_labels_width):
                 for r in range(row + table.header_height, row + table.height):
                     if isinstance(table.index_style, dict):
-                        row_name = table.dataframe.index[r]
+                        row_name = table.dataframe.index[r - row]
                         style = table.index_style.get(row_name, _get_style(bold=True))
                     else:
                         style = table.index_style or _get_style(bold=True)
