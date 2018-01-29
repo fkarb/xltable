@@ -10,7 +10,7 @@ setup_params = dict(
     long_description=open("README.rst").read(),
     packages=find_packages(),
     test_suite="nose.collector",
-    version="0.2.12",
+    version="0.2.13",
     install_requires=["pandas>=0.12.0"],
     extras_require={
         "xlsxwriter": ["xlsxwriter>=0.7.2"],
